@@ -3,11 +3,35 @@ import json
 from os import listdir
 from os.path import isfile, join
 import csv
-from pymongo import MongoClient
+#from pymongo import MongoClient
 from pandas import DataFrame
 import numpy as np
 #import matplotlib.pyplot as plt
 import datetime
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+
+ax = plt.axes(projection=ccrs.PlateCarree())
+ax.set_extent([80, 170, -45, 30])
+
+# Put a background image on for nice sea rendering.
+ax.stock_img()
+
+# Create a feature for States/Admin 1 regions at 1:50m from Natural Earth
+states_provinces = cfeature.NaturalEarthFeature(
+    category='cultural',
+    name='admin_1_states_provinces_lines',
+    scale='50m',
+    facecolor='none')
+
+ax.add_feature(cfeature.LAND)
+ax.add_feature(cfeature.COASTLINE)
+ax.add_feature(states_provinces, edgecolor='gray')
+
+plt.show()
+
+
 
 def le_arquivos(mypath):
     return [ f for f in listdir(mypath) if isfile(join(mypath,f)) ]
@@ -155,13 +179,12 @@ def conta_estoque_ano():
 
 def prepara_contagem_estoque():
     conexao = conecta("filiados")
-    dados = conexao.find({},{'DATA DA FILIACAO':1,'SITUACAO DO REGISTRO':1,"_id":0,"SIGLA DO PARTIDO":1,"DATA DA DESFILIACAO":1,"DATA DO CANCELAMENTO":1})
+    dados = conexao.find({"SIGLA DO PARTIDO":{"$in": ["PT","PMDB","PSDB","PSOL"]}},{'DATA DA FILIACAO':1,'SITUACAO DO REGISTRO':1,"_id":0,"SIGLA DO PARTIDO":1,"DATA DA DESFILIACAO":1,"DATA DO CANCELAMENTO":1,"UF":1,"NOME DO MUNICIPIO":1})
 
     filiados = {}
     desfiliados = {}
     saida = {}
-    #anos = range(1979,2016)
-    anos = range(1979,2012)
+    anos = range(1979,2016)
     for a in anos:
         filiados[a] = {}
         desfiliados[a] = {}
@@ -188,34 +211,37 @@ def prepara_contagem_estoque():
             else:
                 ano_desfiliacao = False
 
-        #if (1979 < ano_filiacao < 2016 and (not ano_desfiliacao or 1979 < ano_desfiliacao < 2016)):
-        if (1979 < ano_filiacao < 2012 and (not ano_desfiliacao or 1979 < ano_desfiliacao < 2012)):
-            if (not (ano_filiacao == 2011 and mes_filiacao > 4)) or (not (ano_filiacao == 2011 and mes_filiacao == 4 and dia_filiacao>14)):
-                if not d["SIGLA DO PARTIDO"] in filiados[ano_filiacao]:
-                    filiados[ano_filiacao][d["SIGLA DO PARTIDO"]] = 0
-                filiados[ano_filiacao][d["SIGLA DO PARTIDO"]] += 1
+        if (1979 < ano_filiacao < 2016 and (not ano_desfiliacao or 1979 < ano_desfiliacao < 2016)):
+            cidade_uf = d["NOME DO MUNICIPIO"]+"/"+d["UF"]
+            if not d["SIGLA DO PARTIDO"] in filiados[ano_filiacao]:
+                filiados[ano_filiacao][d["SIGLA DO PARTIDO"]] = {}
+            if cidade_uf not in filiados[ano_filiacao][d["SIGLA DO PARTIDO"]]:
+                filiados[ano_filiacao][d["SIGLA DO PARTIDO"]][cidade_uf] = 0
+            filiados[ano_filiacao][d["SIGLA DO PARTIDO"]][cidade_uf] += 1
 
-                if ano_desfiliacao:
-                    if not d["SIGLA DO PARTIDO"] in desfiliados[ano_desfiliacao]:
-                        desfiliados[ano_desfiliacao][d["SIGLA DO PARTIDO"]] = 0
-                    desfiliados[ano_desfiliacao][d["SIGLA DO PARTIDO"]] += 1
+            if ano_desfiliacao:
+                if not d["SIGLA DO PARTIDO"] in desfiliados[ano_desfiliacao]:
+                    desfiliados[ano_desfiliacao][d["SIGLA DO PARTIDO"]] = {}
+                if cidade_uf not in desfiliados[ano_desfiliacao][d["SIGLA DO PARTIDO"]]:
+                    desfiliados[ano_desfiliacao][d["SIGLA DO PARTIDO"]][cidade_uf] = 0
+                desfiliados[ano_desfiliacao][d["SIGLA DO PARTIDO"]][cidade_uf] += 1
 
     #with open('partido_ano_filiados.json', 'w') as outfile:
-    with open('partido_ano_filiados2011.json', 'w') as outfile:
+    with open('partido_ano_filiados_cidade.json', 'w') as outfile:
         json.dump(filiados, outfile)
 
     #with open('partido_ano_desfiliados.json', 'w') as outfile:
-    with open('partido_ano_desfiliados2011.json', 'w') as outfile:
+    with open('partido_ano_desfiliados_cidade.json', 'w') as outfile:
         json.dump(desfiliados, outfile)
 
 
 def termina_contagem_estoque():
     #with open('partido_ano_filiados.json', 'r') as jsonfile:
-    with open('partido_ano_filiados2011.json', 'r') as jsonfile:
+    with open('partido_ano_filiados_cidade.json', 'r') as jsonfile:
         filiados = json.load(jsonfile)
 
     #with open('partido_ano_desfiliados.json', 'r') as jsonfile:
-    with open('partido_ano_desfiliados2011.json', 'r') as jsonfile:
+    with open('partido_ano_desfiliados_cidade.json', 'r') as jsonfile:
         desfiliados = json.load(jsonfile)
 
     #primeiro, colocamos 0 filiados para os partidos que não tiveram filiados em um determinado ano
@@ -228,34 +254,46 @@ def termina_contagem_estoque():
     for p in partidos:
         for ano in filiados:
             if p not in filiados[ano]:
-                filiados[ano][p] = 0
+                filiados[ano][p] = []
+
+    #e aqui criamos uma lista de cidades para iterar por elas
+    cidades = []
 
     #agora calculamos o saldo ano a ano
-    saida = {}
+    saldo = {}
     for ano in filiados:
-        if ano not in saida:
-            saida[ano] = {}
+        if ano not in saldo:
+            saldo[ano] = {}
         for sigla in filiados[ano]:
-            if sigla in desfiliados[ano]:
-                saida[ano][sigla] = filiados[ano][sigla] - desfiliados[ano][sigla]
-            else:
-                saida[ano][sigla] = filiados[ano][sigla]
+            saldo[ano][sigla] = {}
+            for cidade_uf in filiados[ano][sigla]:
+                if cidade_uf not in cidades:
+                    cidades.append(cidade_uf)
+                if sigla in desfiliados[ano]:
+                    if cidade_uf in desfiliados[ano][sigla]:
+                        saldo[ano][sigla][cidade_uf] = filiados[ano][sigla][cidade_uf] - desfiliados[ano][sigla][cidade_uf]
+                    else:
+                        saldo[ano][sigla][cidade_uf] = filiados[ano][sigla][cidade_uf]
+                else:
+                    saldo[ano][sigla][cidade_uf] = filiados[ano][sigla][cidade_uf]
 
     #e depois do saldo, o estoque
-    estoque = {}
-    for ano in saida:
-        estoque[ano] = {}
-        for sigla in saida[ano]:
-            estoque[ano][sigla] = soma_anos_anteriores(saida,ano,sigla)
+    estoque = {"sigla":[],"ano":[],"cidade":[],"estoque":[]}
+    for ano in saldo:
+        for sigla in saldo[ano]:
+            for cidade_uf in cidades:
+                estoque["sigla"].append(sigla)
+                estoque["ano"].append(ano)
+                estoque["cidade"].append(cidade_uf)
+                estoque["estoque"].append(soma_anos_anteriores(saldo,ano,sigla,cidade_uf))
 
     df = DataFrame(estoque)
     print(df)
 
     df = df.fillna(0)
-    #df.to_csv("estoque_partidos_ano.csv")
-    df.to_csv("estoque_partidos_ano2011.csv")
+    df.to_csv("estoque_partidos_ano_cidade.csv")
 
-def soma_anos_anteriores(dados,ano,sigla):
+def soma_anos_anteriores(dados,ano,sigla,cidade_uf):
     anos = [int(k) for k in dados.keys()]
     primeiro = min(anos)
     saida = 0
@@ -263,7 +301,8 @@ def soma_anos_anteriores(dados,ano,sigla):
     for a in range(primeiro,int(ano)+1):
         ano_atual = str(a)
         if sigla in dados[ano_atual]:
-            saida += dados[ano_atual][sigla]
+            if cidade_uf in dados[ano_atual][sigla]:
+                saida += dados[ano_atual][sigla][cidade_uf]
     return saida
 
 def conta_filiados_total():
@@ -329,5 +368,8 @@ def analisa_json():
 #conta_filiados_mes()
 #conta_filiados_total()
 #analisa_json()
-conta_estoque_ano()
+#conta_estoque_ano()
+#prepara_contagem_estoque()
+#termina_contagem_estoque()
 
+#conta_filiados_cidade()

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+     <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.css" />
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js" type="text/javascript"></script>
+
+<style>
+    #map { height: 1000px; width: 1400px }
+    .info {
+    padding: 6px 8px;
+    font: 14px/16px Arial, Helvetica, sans-serif;
+    background: white;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 5px;
+}
+.info h4 {
+    margin: 0 0 5px;
+    color: #777;
+}
+
+</style>
+</head>
+<body>
+ <div id="map"></div>
+
+ <script>
+    var map;
+    var dados;
+    var geojson;
+    var info;
+
+    $.ajax({
+      url: 'mun_simplificados.json',
+      dataType: 'json'
+    })
+    .done(
+    function(data) {
+        dados = data;
+        load_data();
+    })
+
+    function load_data(){
+	 window.map = L.map('map').setView([-14, -50], 5);
+	 L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    id: 'teste',
+    attribution: '&copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'}).addTo(map);
+
+
+	   geojson = L.geoJson(
+	   dados,
+       { onEachFeature: onEachFeature }
+	   ).addTo(map);
+
+	   function getColor(d) {
+	   	    return '#800026';
+	   }
+
+	   function style(feature) {
+	   	    return {
+	   	        fillColor: getColor(feature.properties),
+                weight: 0.2,
+                opacity: 1,
+                color: 'white',
+                dashArray: '3',
+                fillOpacity: 0.7
+	   	    };
+	   	}
+		var camada = L.geoJson(dados, {style: style})
+
+		camada.addTo(map);
+
+        info = L.control();
+
+        info.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+            this.update();
+            return this._div;
+        };
+
+        // method that we will use to update the control based on feature properties passed
+        info.update = function (props) {
+            if (props) this._div.innerHTML = '<h2>'+props.nome_ibge_ + ' - '+props.estado+'</h2><br/>' +  '<h3>'+ props.populacao_ +'</h3>';
+            else this._div.innerHTML = '<h2>Passe o mouse sobre uma área</h2>'
+
+        };
+
+        info.addTo(map);
+        
+        function highlightFeature(e) {
+          var layer = e.target;
+
+          layer.setStyle({
+              weight: 5,
+              color: '#666',
+              dashArray: '',
+              fillOpacity: 0.7
+          });
+
+          if (!L.Browser.ie && !L.Browser.opera) {
+              layer.bringToFront();
+          }
+          info.update(layer.feature.properties);
+
+      }
+
+      function resetHighlight(e) {
+          console.log("RESETANDO")
+          geojson.resetStyle(e.target);
+          info.update()
+      }
+      function zoomToFeature(e) {
+          map.fitBounds(e.target.getBounds());
+      }
+      function onEachFeature(feature, layer) {
+          layer.on({
+              mouseover: highlightFeature,
+              mouseout: resetHighlight,
+              click: zoomToFeature
+          });
+      }
+        
+  }
+
+
+</script>
+</body>
+</html>
