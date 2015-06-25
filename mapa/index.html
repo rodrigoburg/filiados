@@ -6,9 +6,60 @@
      <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.css" />
     <script src="http://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js" type="text/javascript"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+<link rel="stylesheet" href="bootstrap-slider.css">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<script src="bootstrap-slider.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>  
+  <script>
+    // Copyright (c) 2013 Ryan Clark
+    // https://gist.github.com/rclark/5779673
+    L.TopoJSON = L.GeoJSON.extend({
+      addData: function(jsonData) {    
+        if (jsonData.type === "Topology") {
+          for (key in jsonData.objects) {
+            geojson = topojson.feature(jsonData, jsonData.objects[key]);
+            L.GeoJSON.prototype.addData.call(this, geojson);
+          }
+        }    
+        else {
+          L.GeoJSON.prototype.addData.call(this, jsonData);
+        }
+      }  
+    });
+  </script>
+
 
 <style>
-    #map { height: 1000px; width: 1400px }
+#slider-wrapper {
+    float: right;
+    padding-right: 50px;
+}
+#CurrentSliderValLabel {
+    padding-left: 10px;
+}
+#map-wrapper {
+    width: 100%;
+    height: 600px;
+    position: relative;
+    border: 1px solid black;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+}
+
+.selected {
+    background: gray;
+}
+
+#button-wrapper {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    width: 100%;
+}
     .info {
     padding: 6px 8px;
     font: 14px/16px Arial, Helvetica, sans-serif;
@@ -25,16 +76,44 @@
 </style>
 </head>
 <body>
- <div id="map"></div>
+ <div id="map-wrapper">
+     <div id="map"></div>
+     <div id="button-wrapper">
+         <input type="button" id="PT" value="PT" onclick="muda_partido(this)" class="btnStyle selected" />
+         <input type="button" id="PSDB" value="PSDB" onclick="muda_partido(this)" class="btnStyle" /> 
+         <input type="button" id="PMDB" value="PMDB" onclick="muda_partido(this)" class="btnStyle" />
+        <input type="button" id="PSOL" value="PSOL" onclick="muda_partido(this)" class="btnStyle" />
+        <div id="slider-wrapper">
+            <input id="slider" type="text" data-slider-min="1980" data-slider-max="2015" data-slider-step="1" data-slider-value="2015">
+            <span id="CurrentSliderValLabel"> Ano: <span id="SliderVal">2015</span></span>
+    </div>
+        
+      </div>      
+ </div>
 
  <script>
+ 
+     var cores =['rgb(255,255,212)','rgb(254,217,142)','rgb(254,153,41)','rgb(217,95,14)','rgb(153,52,4)']
+     $("#slider").slider();
+     $("#slider").on("slide", function(slideEvt) {
+         var valor = slideEvt.value
+         if (parseInt($("#SliderVal").text()) != valor) {
+             $("#SliderVal").text(valor);
+             dados_atuais["ano"] = valor;
+             atualiza()        
+         }
+     });
+     var dados_atuais = {
+         "partido":"PT",
+         "ano":"2015"
+     }
     var map;
     var dados;
-    var geojson;
+    var topolayer;
     var info;
 
     $.ajax({
-      url: 'mun_simplificados.json',
+      url: 'mun_tse_topo.json',
       dataType: 'json'
     })
     .done(
@@ -42,37 +121,50 @@
         dados = data;
         load_data();
     })
+    
+    function muda_partido(e) {
+        var velho = document.getElementById(dados_atuais["partido"])
+        velho.className = velho.className.split(" ")[0]
+        dados_atuais["partido"] = e.value
+        e.className += " selected"        
+        atualiza()
+    }
+    
+    function atualiza() {
+
+        topolayer.eachLayer(
+            function (d) {
+                d.setStyle({"fillColor":getColor(d.feature.properties)})
+            }
+        )
+    }
+   function getColor(d) {
+        var partido_data = dados_atuais["partido"]+"_"+dados_atuais["ano"]
+        var dado = d[partido_data]
+         return dado > 25000 ? cores[4] :
+                dado > 10000  ? cores[3] :
+                dado > 5000  ? cores[2] :
+                dado > 1000  ? cores[1] :
+                               cores[0];
+   }
 
     function load_data(){
+        
 	 window.map = L.map('map').setView([-14, -50], 5);
-	 L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+/*	 L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     id: 'teste',
-    attribution: '&copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'}).addTo(map);
+    attribution: '&copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'}).addTo(map); */
 
+   function style(feature) {
+   	    return 
+   	}
 
-	   geojson = L.geoJson(
-	   dados,
-       { onEachFeature: onEachFeature }
-	   ).addTo(map);
-
-	   function getColor(d) {
-	   	    return '#800026';
-	   }
-
-	   function style(feature) {
-	   	    return {
-	   	        fillColor: getColor(feature.properties),
-                weight: 0.2,
-                opacity: 1,
-                color: 'white',
-                dashArray: '3',
-                fillOpacity: 0.7
-	   	    };
-	   	}
-		var camada = L.geoJson(dados, {style: style})
-
-		camada.addTo(map);
-
+    topolayer = new L.TopoJSON();
+    topolayer.addData(dados);
+    topolayer.addTo(map);
+    topolayer.eachLayer(onEachFeature);
+    
+       
         info = L.control();
 
         info.onAdd = function (map) {
@@ -83,7 +175,9 @@
 
         // method that we will use to update the control based on feature properties passed
         info.update = function (props) {
-            if (props) this._div.innerHTML = '<h2>'+props.nome_ibge_ + ' - '+props.estado+'</h2><br/>' +  '<h3>'+ props.populacao_ +'</h3>';
+           var partido_data = dados_atuais["partido"]+"_"+dados_atuais["ano"]
+            
+            if (props) this._div.innerHTML = '<h2>'+props.nome_ibge_ + ' - '+props.estado+'</h2>' +  '<h4>'+ props[partido_data] +' filiados </h4>';
             else this._div.innerHTML = '<h2>Passe o mouse sobre uma área</h2>'
 
         };
@@ -94,7 +188,7 @@
           var layer = e.target;
 
           layer.setStyle({
-              weight: 5,
+              weight: 2,
               color: '#666',
               dashArray: '',
               fillOpacity: 0.7
@@ -108,14 +202,20 @@
       }
 
       function resetHighlight(e) {
-          console.log("RESETANDO")
-          geojson.resetStyle(e.target);
+          e.target.setStyle({color: "white", weight:0.1})
           info.update()
       }
       function zoomToFeature(e) {
           map.fitBounds(e.target.getBounds());
       }
-      function onEachFeature(feature, layer) {
+      function onEachFeature(layer) {
+          layer.setStyle({
+   	        fillColor: getColor(layer.feature.properties),
+             weight: 0.1,
+              color: "white",
+             opacity: 1,
+             fillOpacity: 0.7   	    
+          })
           layer.on({
               mouseover: highlightFeature,
               mouseout: resetHighlight,

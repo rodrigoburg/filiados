@@ -8,29 +8,7 @@ from pandas import DataFrame
 import numpy as np
 #import matplotlib.pyplot as plt
 import datetime
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-
-ax = plt.axes(projection=ccrs.PlateCarree())
-ax.set_extent([80, 170, -45, 30])
-
-# Put a background image on for nice sea rendering.
-ax.stock_img()
-
-# Create a feature for States/Admin 1 regions at 1:50m from Natural Earth
-states_provinces = cfeature.NaturalEarthFeature(
-    category='cultural',
-    name='admin_1_states_provinces_lines',
-    scale='50m',
-    facecolor='none')
-
-ax.add_feature(cfeature.LAND)
-ax.add_feature(cfeature.COASTLINE)
-ax.add_feature(states_provinces, edgecolor='gray')
-
-plt.show()
-
+import shapefile
 
 
 def le_arquivos(mypath):
@@ -287,6 +265,9 @@ def termina_contagem_estoque():
                 estoque["cidade"].append(cidade_uf)
                 estoque["estoque"].append(soma_anos_anteriores(saldo,ano,sigla,cidade_uf))
 
+    with open ("estoque_partidos_ano_cidade.json","w") as outfile:
+        json.dump(estoque,outfile)
+
     df = DataFrame(estoque)
     print(df)
 
@@ -360,6 +341,84 @@ def analisa_json():
         #dados.to_csv("partido_total.csv",index=False)
         print(dados)
 
+def prepara_geojson():
+    from pandas import read_csv
+    dados = read_csv("estoque_partidos_ano_cidade.csv")
+
+    dados["variavel"] = dados.apply(lambda t:t["sigla"]+"_"+str(t["ano"]),axis=1)
+    for coluna in dados.columns:
+        if coluna not in ["estoque","variavel","cidade"]:
+            del dados[coluna]
+
+    dados = dados.to_dict(orient="records")
+
+    saida = {}
+
+    i = 0
+    for dado in dados:
+        i+=1
+        if i % 5000 == 0:
+            print(i)
+        nome = tira_acento(dado["cidade"])
+        if nome not in saida:
+            saida[nome] = {}
+        saida[nome][dado["variavel"]] = dado["estoque"]
+
+    with open("prep_geojson.json","w") as outfile:
+        json.dump(saida,outfile)
+
+    return saida
+
+def tira_acento(s):
+    import unicodedata
+    return ''.join(c for c in unicodedata.normalize('NFD', s)
+                  if unicodedata.category(c) != 'Mn')
+
+def cria_geojson_cidades(arquivo):
+    #pegamos o json de dados que vamos usar aqui
+    try:
+        with open("prep_geojson.json","r") as jsonfile:
+            dados = json.load(jsonfile)
+            print("Carregamos o arquivo de prepração! Agora vamos mudar o shp")
+    except:
+        print("Não há arquivo pré-preparado. Vamos criá-lo")
+        dados = prepara_geojson()
+
+    import shapefile, copy
+    #abrimos o shape
+    reader = shapefile.Reader(arquivo)
+    fields = reader.fields[1:]
+    field_names = [field[0] for field in fields]
+    buffer = []
+    for sr in reader.shapeRecords():
+       atr = dict(zip(field_names, sr.record))
+       geom = sr.shape.__geo_interface__
+       buffer.append(dict(type="Feature", \
+        geometry=geom, properties=atr))
+
+    #agora mudamos o que queremos mudar nas propriedades
+    saida = []
+    resta = ["cod_ibge","nome_ibge_","estado"]
+    for a in buffer:
+        linha = copy.deepcopy(a)
+        for property in a["properties"]:
+            if property not in resta:
+                linha["properties"].pop(property, None)
+        nome = tira_acento(linha["properties"]["nome_ibge_"].upper()+"/"+linha["properties"]["estado"])
+        try:
+            for partido_data in dados[nome]:
+                linha["properties"][partido_data] = dados[nome][partido_data]
+        except KeyError:
+            pass
+        saida.append(linha)
+
+    # write the GeoJSON file
+    from json import dumps
+    geojson = open(arquivo+".json", "w")
+    geojson.write(dumps({"type": "FeatureCollection",\
+    "features": saida}, indent=2) + "\n")
+    geojson.close()
+
 
 #baixa_dados()
 #descompacta(): #roda na pasta: #unzip \*.zip
@@ -373,3 +432,4 @@ def analisa_json():
 #termina_contagem_estoque()
 
 #conta_filiados_cidade()
+cria_geojson_cidades("mapa/municipios_tse")
