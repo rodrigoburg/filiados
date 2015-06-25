@@ -412,13 +412,93 @@ def cria_geojson_cidades(arquivo):
             pass
         saida.append(linha)
 
+    #agora juntamos a população por ano, para termos os dados per_capita
+    try:
+        with open("prep_populacao.json","r") as jsonfile:
+            pop = json.load(jsonfile)
+    except FileNotFoundError:
+        pop = prepara_populacao()
+
+    saida_final = []
+
+    for linha in saida:
+        nova_linha = copy.deepcopy(linha)
+        codigo = str(linha["properties"]["cod_ibge"])[:-3]
+
+        #se não tiver esse codigo de municipio nas cidades que temos a população, removemos a informação de filiados
+        if codigo not in pop:
+            for variavel in linha["properties"]:
+                ano = variavel[-4:]
+                if is_int(ano):
+                    del nova_linha["properties"][variavel]
+
+        #se tiver a informação de tamanho, fazemos os cálculos para os anos existentes
+        else:
+            for variavel in linha["properties"]:
+                ano = variavel[-4:]
+                if is_int(ano):
+                    if ano in pop[codigo]:
+                        nova_linha["properties"][variavel] = int(nova_linha["properties"][variavel]*1000/int(pop[codigo][ano]))
+                    else:
+                        del nova_linha["properties"][variavel]
+
+        saida_final.append(nova_linha)
+
     # write the GeoJSON file
     from json import dumps
     geojson = open(arquivo+".json", "w")
     geojson.write(dumps({"type": "FeatureCollection",\
-    "features": saida}, indent=2) + "\n")
+    "features": saida_final}, indent=2) + "\n")
     geojson.close()
 
+    #convert to topojson
+    import os
+    os.system("topojson "+arquivo+".json > "+arquivo+"_topo.json -p")
+
+def is_int(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+def prepara_populacao():
+    from pandas import read_csv
+    pop = read_csv("pop_mun_ano.csv",sep=";")
+    pop["codigo"] = pop["Município"].apply(lambda t:t.split(" ")[0])
+    del pop["Município"]
+
+    pop = pop.to_dict(orient="records")
+    saida = {}
+    for item in pop:
+        saida[item["codigo"]] = {}
+        for campo in item:
+            if campo != "codigo":
+                if item[campo] != "-":
+                    saida[item["codigo"]][campo] = item[campo]
+
+        #agora acrescentamos 2013 a 2015
+        cresc_anual = [item['2008'],item['2009'],item['2010'],item['2011'],item['2012']]
+        taxa_cresc = taxa_crescimento(cresc_anual)+1
+        try:
+            saida[item["codigo"]]['2013'] = int(int(item['2012'])*taxa_cresc)
+            saida[item["codigo"]]['2014'] = int(int(item['2012'])*taxa_cresc*taxa_cresc)
+            saida[item["codigo"]]['2015'] = int(int(item['2012'])*taxa_cresc*taxa_cresc*taxa_cresc)
+        except ValueError:
+            pass
+
+    with open("prep_populacao.json","w") as outfile:
+        json.dump(saida,outfile)
+
+def taxa_crescimento(lista):
+    saida = []
+    for i in range(0,len(lista)-1):
+        try:
+            saida.append((int(lista[i])/int(lista[i+1]))-1)
+        except ValueError:
+            pass
+
+    return np.average(saida)
 
 #baixa_dados()
 #descompacta(): #roda na pasta: #unzip \*.zip

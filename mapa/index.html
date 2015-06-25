@@ -141,10 +141,11 @@
    function getColor(d) {
         var partido_data = dados_atuais["partido"]+"_"+dados_atuais["ano"]
         var dado = d[partido_data]
-         return dado > 25000 ? cores[4] :
-                dado > 10000  ? cores[3] :
-                dado > 5000  ? cores[2] :
-                dado > 1000  ? cores[1] :
+       if (! dado) return "white"
+         return dado > 30 ? cores[4] :
+                dado > 15  ? cores[3] :
+                dado > 10  ? cores[2] :
+                dado > 5  ? cores[1] :
                                cores[0];
    }
 
@@ -177,8 +178,13 @@
         info.update = function (props) {
            var partido_data = dados_atuais["partido"]+"_"+dados_atuais["ano"]
             
-            if (props) this._div.innerHTML = '<h2>'+props.nome_ibge_ + ' - '+props.estado+'</h2>' +  '<h4>'+ props[partido_data] +' filiados </h4>';
-            else this._div.innerHTML = '<h2>Passe o mouse sobre uma área</h2>'
+            if (props) { 
+                if (props[partido_data])
+                    this._div.innerHTML = '<h2>'+props.nome_ibge_ + ' - '+props.estado+'</h2>' +  '<h4>'+ props[partido_data] +' filiados por 1.000 adultos</h4>';
+                else 
+                    this._div.innerHTML = '<h2>'+props.nome_ibge_ + ' - '+props.estado+'</h2>' +  '<h4>Sem data para esse município/período</h4>'
+            }
+            else this._div.innerHTML = '<h2>Passe o mouse sobre um município</h2>'
 
         };
 
