@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8"/>
+    <script type="text/javascript" src="http://codeorigin.jquery.com/jquery-2.0.3.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <script type="text/javascript" src ="main.js"></script>
+    <style>
+        div.tooltip {
+            position: absolute;
+            text-align: left;
+            width: auto;
+            height: auto;
+            margin-left: 35px;
+            font: 14px Arial;
+            background: white;
+            border-radius: 8px;
+            pointer-events: none;
+            border:2px solid;
+            color:black;
+            line-height: 0.7;
+        }
+        div#topo {
+            color: white;
+            font-size: 30px;
+            padding: 5px;
+
+        }
+        div#resto {
+            padding-left: 5px;
+            padding-right: 3px;
+            padding-top: 5px;
+            line-height: 0.7;
+        }
+        .btn-group {
+            position: absolute;
+            left: 85px;
+            top: 30px;
+
+        }
+    </style>
+</head>
+<body>
+<div class="btn-group">
+    <button type="button"  class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Estoque ano a ano <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu">
+        <li><a id="estoque" href="#">Estoque ano a ano</a></li>
+        <li><a id= "var_perc" href="#">Variação ano a ano (%)</a></li>
+        <li><a id = "var_abs" href="#">Variação ano a ano (abs)</a></li>
+    </ul>
+</div>
+
+    <div class="tooltip" style="opacity:0">
+        <div id="topo"></div>
+        <div id="resto"></div>
+    </div>
+    <div id="candidatos">
+    <script>inicializa();</script>
+</div>
+</body>
+</html>
