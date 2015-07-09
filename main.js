@@ -55,6 +55,12 @@ function acha_cor(partido) {
 
 function desenha_grafico() {
     var svg = dimple.newSvg("#candidatos", width, height);
+    $("svg").each(function (i,d) {
+        if (!($(d).attr("id"))) {
+            $(d).attr("id","grafico_"+variavel)
+        }
+    });
+
     data = dimple.filterData(data,"ano",anos);
     var myChart = new dimple.chart(svg, data);
     myChart.setBounds(margin_left, margin_top, width-margin_left*4, height-margin_top*3);
@@ -187,9 +193,12 @@ function formata_perc(num) {
 
 function muda_grafico(e) {
     $("button").text($(e.target).text());
-    d3.select("svg").remove();
-    variavel = $(e.target).attr("id")
-    desenha_grafico()
-
+    $("#grafico_"+variavel).hide();
+    variavel = $(e.target).attr("id");
+    if ($("#grafico_"+variavel).length > 0) {
+        $("#grafico_"+variavel).show();
+    } else {
+        desenha_grafico()
+    }
 }
 
