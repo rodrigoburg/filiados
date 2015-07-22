@@ -8,7 +8,8 @@ width = $(window).width();
 height = $(window).height()*0.7;
 margin_left = width*0.02;
 margin_top = height*0.04;
-anos = ["2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015"]
+
+anos = ["2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015"];
 cores = {
     "PT"       :["#a00200"],
     "PST"      :["#a51001"],
@@ -47,7 +48,7 @@ cores = {
     "PAN"      :["#58abd0"],
     "PSDC"     :["#4da7de"]
 }
-
+alert(width);
 
 function acha_cor(partido) {
     return cores[partido]
@@ -74,9 +75,9 @@ function desenha_grafico() {
     series.interpolation = "cardinal";
     series.addEventHandler("mouseover", function (e) {
         if (variavel == "var_perc") {
-            cy = formata_perc(e.yValue);
+            cy = e.yValue;
         } else {
-            cy = formata_numero(e.yValue);
+            cy = e.yValue;
         }
         cx = new Date(e.xValue);
         cx = cx.getFullYear();
