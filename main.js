@@ -48,7 +48,6 @@ cores = {
     "PAN"      :["#58abd0"],
     "PSDC"     :["#4da7de"]
 }
-alert(width);
 
 function acha_cor(partido) {
     return cores[partido]
@@ -176,10 +175,17 @@ function adiciona_eventos() {
 
 function move(event) {
     //mexe a tooltip
-    $(".tooltip").css({
-        left: event.pageX - 15,
-        top: event.pageY - 20
-    });
+    if (parseInt(cx) < 2011) {
+        $(".tooltip").css({
+            left: event.pageX - margin_left/2,
+            top: event.pageY - margin_top/2
+        });
+    } else {
+        $(".tooltip").css({
+            left: event.pageX - margin_left*4.5,
+            top: event.pageY - margin_top/2
+        });
+    }
 
     //agora atualizamos a tooltip se o evento estiver mais perto de outro círculo
     var partido = $(event.data).attr("id").split("-")[1].toUpperCase();
@@ -208,14 +214,8 @@ function destaca(event) {
             "opacity": 0.9
         })
 
-    //agora aparece a tooltip
-    $(".tooltip").css({});
-    $(".tooltip").css({
-        opacity: 1,
-        left: event.pageX - 15,
-        top: event.pageY - 20,
-        "border-color": acha_cor(partido)
-    });
+
+
     $("#topo").css({background: acha_cor(partido)})
 
     //se o mouseover for em um círculo, colore-o da cor do partido para que ele não suma
@@ -239,6 +239,23 @@ function destaca(event) {
         cy = dados[0][variavel];
     }
 
+    //agora aparece a tooltip
+    $(".tooltip").css({});
+    $(".tooltip").css({
+        opacity: 1,
+        "border-color": acha_cor(partido)
+    });
+    if (parseInt(cx) < 2011) {
+        $(".tooltip").css({
+            left: event.pageX - margin_left/2,
+            top: event.pageY - margin_top/2
+        });
+    } else {
+        $(".tooltip").css({
+            left: event.pageX - margin_left*4.5,
+            top: event.pageY - margin_top/2
+        });
+    }
     var nome = "Estoque de filiados no ano"
     if (variavel == "var_abs") {
         nome = "Variação de filiados no ano"
