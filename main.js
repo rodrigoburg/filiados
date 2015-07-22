@@ -95,19 +95,38 @@ function desenha_grafico() {
     arruma_eixos();
 }
 
+function isInt(value) {
+    return !isNaN(value) &&
+        parseInt(Number(value)) == value &&
+        !isNaN(parseInt(value, 10));
+}
+
+
 function arruma_eixos() {
     $(".dimple-custom-axis-label").each(function (i,d) {
         var texto = $(d).html()
+        //se tiver k, é porque é no eixo Y. então trocamos para mil
         if (texto.indexOf("k") > -1) {
             $(d).html(texto.replace("k"," mil"))
-        }
-        d3.select(d)
-            .attr("transform", function(d) {
-            return "rotate(-35)"
-            });
+        } else if (isInt(texto) && texto != "0") {
+            //se não tiver, for número e não for zero, é no eixo x. então vamos rodá-lo
+            if (variavel == "var_abs") {
+                d3.select(d)
+                    .attr("transform", function(d) {
+                        return "translate(-105,30) rotate(-90)"
+                    });
 
+            } else {
+                d3.select(d)
+                    .attr("transform", function(d) {
+                        return "translate(-15,30) rotate(-90)"
+                    });
+            }
+        }
     })
 }
+
+
 function inicializa() {
     $.getJSON( "estoque_partido_ano.json", function( dados ) {
         data = dados
@@ -150,10 +169,28 @@ function adiciona_eventos() {
 }
 
 function move(event) {
+    //mexe a tooltip
     $(".tooltip").css({
         left: event.pageX - 15,
         top: event.pageY - 20
     });
+
+    //agora atualizamos a tooltip se o evento estiver mais perto de outro círculo
+    var partido = $(event.data).attr("id").split("-")[1].toUpperCase();
+    var distancia = 1000;
+    var proximo;
+    $("circle.dimple-"+partido.toLowerCase()).each(function (i,d) {
+        var temp = Math.abs(event.pageX - $(d).attr("cx"))
+        if (temp < distancia) {
+            distancia = temp;
+            proximo = d;
+        }
+    })
+    var ano = $(proximo).attr("id").split("-")[5];
+    var dados = dimple.filterData(data,"ano",ano);
+    dados = dimple.filterData(dados,"partido",partido)
+    cx = ano;
+    cy = dados[0][variavel];
 }
 
 function destaca(event) {
@@ -175,11 +212,25 @@ function destaca(event) {
     });
     $("#topo").css({background: acha_cor(partido)})
 
-    if (circulo) {
-        $("#resto").show()
-        $("circle"+event.data).css({"fill": acha_cor(partido)})
-    } else {
-        $("#resto").hide()
+    //se o mouseover for em um círculo, colore-o da cor do partido para que ele não suma
+    $("circle"+event.data).css({"fill": acha_cor(partido)})
+
+    //se não for cículo, achamos o círculo mais próximo e pegamos a info dele
+    if (!(circulo)) {
+        var distancia = 1000;
+        var proximo;
+        $("circle.dimple-"+partido.toLowerCase()).each(function (i,d) {
+            var temp = Math.abs(event.pageX - $(d).attr("cx"))
+            if (temp < distancia) {
+                distancia = temp;
+                proximo = d;
+            }
+        })
+        var ano = $(proximo).attr("id").split("-")[5];
+        var dados = dimple.filterData(data,"ano",ano);
+        dados = dimple.filterData(dados,"partido",partido)
+        cx = ano;
+        cy = dados[0][variavel];
     }
 
     var nome = "Estoque de filiados no ano"
@@ -189,7 +240,7 @@ function destaca(event) {
 
     var topo = "<b>"+partido+"</b>"
     var resto = "<b><p>Ano:</b> "+cx+"</p>" +
-        "<b><p>"+nome+":</b> "+cy+"</p>"
+        "<b><p>"+nome+":</b> "+formata_numero(cy)+"</p>"
     $("#topo").html(topo);
     $("#resto").html(resto);
 }
