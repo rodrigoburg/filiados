@@ -1,66 +1,169 @@
+
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" class="edados">
 <head>
-    <meta charset="utf-8"/>
-    <script src="js/jquery-2.0.3.min.js"></script>
-    <script type="text/javascript" src="js/bootstrap.min.js"></script>
-    <script src="js/d3.v3.min.js"></script>
-    <script src="js/dimple.v2.0.0.min.js"></script>
-    <link rel="stylesheet" href="js/bootstrap.min.css">
-    <script type="text/javascript" src ="main.js"></script>
-    <style>
-        div.tooltip {
-            position: absolute;
-            text-align: left;
-            width: auto;
-            height: auto;
-            margin-left: 35px;
-            font: 14px Arial;
-            background: white;
-            border-radius: 8px;
-            pointer-events: none;
-            border:2px solid;
-            color:black;
-            line-height: 0.7;
-        }
-        div#topo {
-            color: white;
-            font-size: 30px;
-            padding: 5px;
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
 
-        }
-        div#resto {
-            padding-left: 5px;
-            padding-right: 3px;
-            padding-top: 5px;
-            line-height: 0.7;
-        }
-        .btn-group {
-            position: absolute;
-            left: 85px;
-            top: 30px;
+    <title>Governismo e coesão dos partidos - Estadão Dados</title>
 
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="index">
+    <meta name="creator" content="José Roberto Toledo">
+    <meta name="creator" content="Rodrigo Burgarelli">
+    <meta name="creator" content="Guilherme Duarte">
+    <meta name="creator" content="Estadão Dados">
+    <meta name="creator" content="Estadão.com.br">
+    <meta property="og:site_name" content="Estadão Dados">
+    <meta property="og:locale" content="pt_BR">
+
+    <!-- meta tags específicas de cada projeto -->
+    <meta name="author" content="Rodrigo Burgarelli & Guilherme Duarte"> <!-- A pessoa responsável pelo desenvolvimento deste arquivo -->
+    <meta name="DC.creator " content="Rodrigo Burgarelli & Guilherme Duarte"> <!-- Desenvolvedor da página -->
+    <meta name="DC.creator.address" content="rodrigo.burgarelli1@gmail.com"> <!-- email do autor da página -->
+
+    <!-- O nome desta aplicação -->
+
+    <meta name="application-name" content="Governismo e coesão dos partidos">
+    <meta property="og:title" content="Governismo e coesão dos partidos">
+
+
+    <!-- Descrição curta e precisa do conteúdo desta página -->
+
+    <meta name="description" content="Apoio ao governo e coerência interna das bancadas se transforma com o tempo. #estadaodados">
+    <meta property="og:description" content="Apoio ao governo e coerência interna das bancadas se transforma com o tempo. #estadaodados">
+
+
+    <!-- Palavras reletantes relativas ao conteúdo dessa página. Em formato texto e separadas por vírgula. -->
+
+    <meta name="keywords" content="governismo, partidos, congresso, deputados, dados abertos, opendata, jornalismo de dados, datajournalism">
+
+    <meta property="og:url" content="http://estadaodados.com/coesao/"/> <!-- ex: http://estadaodados.com/html/coligacoes/ -->
+
+    <!-- imagem que aparecerá no facebook quando o site for compartilhado -->
+
+    <meta property="og:image" content="http://estadaodados.com/coesao/imgs/dispersao.png"/>
+
+    <!-- Le styles -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link href="css/estadaodados.css" rel="stylesheet">
+
 </head>
+
 <body>
-<div class="btn-group">
-    <button type="button"  class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        Estoque ano a ano <span class="caret"></span>
-    </button>
-    <ul class="dropdown-menu">
-        <li><a id="estoque" href="#">Estoque ano a ano</a></li>
-        <li><a id= "var_perc" href="#">Variação ano a ano (%)</a></li>
-        <li><a id = "var_abs" href="#">Variação ano a ano (abs)</a></li>
-    </ul>
+<header>
+    <nav class="navbar navbar-fixed-top">
+        <div class="container-fluid" id="navbar-edados">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse-edados">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#"><img src="http://estadaodados.com/base/imgs/logo_estadao_dados.png" id="logo_estadao_dados" title="Estadão Dados"/></a>
+            </div>
+            <div class="navbar-collapse collapse navbar-collapse-edados" id="navbar-collapse-edados">
+                <ul class="nav navbar-nav navbar-edados">
+                    <li class="dropdown active navbar-edados-projetos">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            Projetos <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu" role="menu" aria-labelledby="dLabelProjetos">
+                            <!--START_MENU_ITENS-->
+                            <li role="presentation"><a href="/basometro">Basômetro</a></li>
+                            <li role="presentation"><a href="/biomas2012">Biomas 2012</a></li>
+                            <li role="presentation"><a href="/coligacoes">Coligações</a></li>
+                            <li role="presentation"><a href="/cotas">Cotas</a></li>
+                            <li role="presentation"><a href="/cruzador">Cruzador de Opiniões</a></li>
+                            <li role="presentation"><a href="/eleicoes2012">Eleições 2012</a></li>
+                            <li role="presentation"><a href="/ideb">IDEB</a></li>
+                            <li role="presentation"><a href="/intencaodevoto">Intenção de Voto</a></li>
+                            <li role="presentation"><a href="/perfil_eleitorado">Perfil do Eleitorado</a></li>
+                            <li role="presentation"><a href="/piramide_eleitoral">Pirâmide Eleitoral</a></li>
+                            <li role="presentation"><a href="/quespvcquer">Que SP vc quer?</a></li>
+                            <li role="presentation"><a href="/religiao">Religiões</a></li>
+                            <li role="presentation"><a href="/ringue2014">Ringue 2014</a></li>
+                            <li role="presentation"><a href="/santamaria">Santa Maria</a></li>
+                            <li role="presentation"><a href="/saopauloquebalanca">São Paulo que balança</a></li>
+                            <li role="presentation"><a href="/doacoes2014">Siga o dinheiro</a></li>
+                            <!--END_MENU_ITENS-->
+                        </ul>
+                    </li>
+                    <li><a href="http://blog.estadaodados.com">Blog</a></li>
+                    <li class="dropdown active">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button">
+                            Estadão
+                            <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu" role="menuEstadao" aria-labelledby="dLabelEstadao">
+                            <li><a href="http://politica.estadao.com.br/" target="_top" title="POLÍTICA">Política</a></li>
+                            <li><a href="http://economia.estadao.com.br/" target="_top" title="ECONOMIA">Economia</a></li>
+                            <li><a href="http://esportes.estadao.com.br/" target="_top" title="ESPORTES">Esportes</a></li>
+                            <li><a href="http://blogs.estadao.com.br/link/" target="_top" title="LINK">Link</a></li>
+                            <li><a href="http://rta-se.estadao.com.br/" target="_top" title="DIVIRTA-SE">Divirta-se</a></li>
+                            <li><a href="http://pme.estadao.com.br/" target="_top" title="PME">PME</a></li>
+                            <li><a href="http://www.estadao.com.br/jornal-do-carro" target="_top" title="JORNAL DO CARRO">Jornal do Carro</a></li>
+                            <li><a href="http://www.estadao.com.br/opiniao/" target="_top" title="OPINIÃO">Opinião</a></li>
+                            <li><a href="http://acervo.estadao.com.br/" target="_top" title="ACERVO">Acervo</a></li>
+                            <li><a href="http://radio.estadao.com.br/" target="_top" title="RÁDIO">Rádio</a></li>
+                            <li><a href="http://territorioeldorado.limao.com.br" target="_top" title="Eldorado">Eldorado</a></li>
+                            <li><a href="http://revistapiaui.estadao.com.br/" target="_top" title="Piauí">Piauí</a></li>
+                            <li><a href="http://www.broadcastpolitico.com.br/experimente/" target="_top" title="Broadcast Político">Broadcast Político</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </nav> <!-- Fim da barra de navegação do Estadão Dados -->
+</header>
+<div id="titulo">
+    <h1 class="titulo">Governismo e coesão dos partidos</h1>
+    <p class="linhafina">Apoio ao governo e coerência interna das bancadas se transformam com o tempo</p>
+    <p class="explicacao">Cada círculo representa um partido. Quanto mais alto ele estiver no gráfico, mais governista estará a sigla. Quanto mais à direita, menos coesa será a bancada, ou seja, haverá mais deputados votando de maneira oposta dentro da mesma sigla. O diâmetro dos círculos é proporcional ao número de deputados. Clique sobre a data e arraste para ver a evolução através do tempo ou construa um novo gráfico selecionando outras variáveis nas setas ao lado dos títulos de cada eixo.</p>
+</div>
+<div id="grafico">
+    <div id="botao" class="btn-group">
+        <button type="button"  class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Estoque ano a ano <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li><a id="estoque" href="#">Estoque ano a ano</a></li>
+            <li><a id = "var_abs" href="#">Variação ano a ano (abs)</a></li>
+        </ul>
+    </div>
 </div>
 
-    <div class="tooltip" style="opacity:0">
-        <div id="topo"></div>
-        <div id="resto"></div>
-    </div>
-    <div id="candidatos">
-    <script>inicializa();</script>
+<div class="tooltip" style="opacity:0">
+    <div id="topo"></div>
+    <div id="resto"></div>
 </div>
+<div id="candidatos">
+</div>
+
+<footer class="col-xs-12 text-center">
+    <p>Guilherme Duarte, José Roberto de Toledo e Rodrigo Burgarelli</p>
+    <p><b>Grupo Estado</b> • Copyright © 2007-2015 • <a href="https://creativecommons.org/licenses/by-sa/3.0/br/">Alguns direitos reservados (CC-By-SA)</a></p>
+</footer>
+
+
+<script src="js/jquery-2.0.3.min.js"></script>
+<script type="text/javascript" src="js/bootstrap.min.js"></script>
+<script src="js/d3.v3.min.js"></script>
+<script src="js/dimple.v2.1.5.min.js"></script>
+<script type="text/javascript" src ="main.js"></script>
+<script>inicializa();</script>
+
+<!-- AddThis Button BEGIN -->
+<script type="text/javascript">var addthis_config = {"data_track_addressbar":true};</script>
+<script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js#pubid=ra-53751e9e65674220"></script>
+<!-- AddThis Button END -->
+
+<!-- google analytics -->
+<script language="javascript" type="text/javascript" src="js/edados_analytics.js"></script>
+
 </body>
 </html>
+

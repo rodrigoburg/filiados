@@ -64,30 +64,50 @@ function desenha_grafico() {
     data = dimple.filterData(data,"ano",anos);
     var myChart = new dimple.chart(svg, data);
     myChart.setBounds(margin_left, margin_top, width-margin_left*4, height-margin_top*3);
-    myChart.addMeasureAxis("y", variavel);
-    var y = myChart.addTimeAxis("x", "ano","%Y","%Y");
-    y.title = ""
+    var y = myChart.addMeasureAxis("y", variavel);
+    if (variavel == "var_abs") {
+        y.title = "Variação absoluta no número de filiados em relação ao ano anterior"
+    } else {
+        y.title = "Estoque de filiados no ano"
+    }
+    var x = myChart.addTimeAxis("x", "ano","%Y","%Y");
+    x.title = ""
     series = myChart.addSeries("partido", dimple.plot.line);
+    series.lineMarker = true;
     series.lineWeight = 7;
     series.interpolation = "cardinal";
-    series.getTooltipText = function (e) {
+    series.addEventHandler("mouseover", function (e) {
         if (variavel == "var_perc") {
-            cy = formata_perc(e.cy);
+            cy = formata_perc(e.yValue);
         } else {
-            cy = formata_numero(e.cy);
+            cy = formata_numero(e.yValue);
         }
-        cx = new Date(e.cx);
+        cx = new Date(e.xValue);
         cx = cx.getFullYear();
-        return [];
-    };
+
+    });
 
     for (var cor in cores) {
         myChart.assignColor(cor,acha_cor(cor),acha_cor(cor));
     }
     myChart.draw(2000);
-    adiciona_eventos()
+    adiciona_eventos();
+    arruma_eixos();
 }
 
+function arruma_eixos() {
+    $(".dimple-custom-axis-label").each(function (i,d) {
+        var texto = $(d).html()
+        if (texto.indexOf("k") > -1) {
+            $(d).html(texto.replace("k"," mil"))
+        }
+        d3.select(d)
+            .attr("transform", function(d) {
+            return "rotate(-35)"
+            });
+
+    })
+}
 function inicializa() {
     $.getJSON( "estoque_partido_ano.json", function( dados ) {
         data = dados
@@ -97,21 +117,29 @@ function inicializa() {
 }
 
 function adiciona_eventos() {
-    $("path").each(function (i,d) {
-        if ($(d).attr("class").indexOf("dimple-line") > -1) {
-            //primeiro colore todos de ccinza
-            acinzenta(d)
-            $(d).bind("mouseover", d, destaca)
-            $(d).bind("mousemove", d, move)
-            $(d).bind("mouseout", d, acinzenta)
-        }
+    setTimeout(function () {
+        d3.selectAll("circle")
+            .transition()
+            .duration(1000)
+            .style("fill","gray")
+            .attr("r","2px");
+
+    },2000);
+
+    $(".dimple-line").each(function (i,d) {
+        //primeiro colore todos de ccinza
+        acinzenta(d)
+        var partido = $(d).attr("id");
+        $(d).bind("mouseover", "."+partido, destaca);
+        $(d).bind("mousemove", "."+partido, move);
+        $(d).bind("mouseout", "."+partido, acinzenta);
     })
-    $("circle").each(function (i,d) {
-        if ($(d).attr("class").indexOf("dimple-marker") > -1) {
-            var partido = $(d).attr("id").split("_")[0]
-            $(d).bind("mouseover","#"+partido,destaca)
-            $(d).bind("mouseout","#"+partido,acinzenta)
-        }
+
+    $(".dimple-marker").each(function (i,d) {
+        acinzenta(d)
+        var partido = $(d).attr("id").split("-")[1]
+        $(d).bind("mouseover",".dimple-"+partido.toLowerCase(),destaca)
+        $(d).bind("mouseout",".dimple-"+partido.toLowerCase(),acinzenta)
     })
 
     //agora da lista que muda os graficos
@@ -123,36 +151,45 @@ function adiciona_eventos() {
 
 function move(event) {
     $(".tooltip").css({
-        left: event.clientX - 15,
-        top: event.clientY - 20,
+        left: event.pageX - 15,
+        top: event.pageY - 20
     });
 }
 
 function destaca(event) {
-    target = $(event.target);
-    var elemento = event.data;
-    $(elemento).css(
-        {"stroke": acha_cor($(elemento).attr("id")),
+    var circulo = $(event.target).is("circle"); //checa se é circulo
+    var partido = $(event.data).attr("id").split("-")[1].toUpperCase();
+    var elemento = $(event.data) //pega círculos e linhas
+    elemento.css(
+        {"stroke": acha_cor(partido),
             "opacity": 0.9
         })
+
     //agora aparece a tooltip
     $(".tooltip").css({});
     $(".tooltip").css({
         opacity: 1,
-        left: event.clientX - 15,
-        top: event.clientY - 20,
-        "border-color": acha_cor($(elemento).attr("id"))
+        left: event.pageX - 15,
+        top: event.pageY - 20,
+        "border-color": acha_cor(partido)
     });
-    $("#topo").css({background: acha_cor($(elemento).attr("id"))})
+    $("#topo").css({background: acha_cor(partido)})
 
-    if (target.is("circle")) {
+    if (circulo) {
         $("#resto").show()
+        $("circle"+event.data).css({"fill": acha_cor(partido)})
     } else {
         $("#resto").hide()
     }
-    var topo = "<b>"+$(elemento).attr("id")+"</b>"
+
+    var nome = "Estoque de filiados no ano"
+    if (variavel == "var_abs") {
+        nome = "Variação de filiados no ano"
+    }
+
+    var topo = "<b>"+partido+"</b>"
     var resto = "<b><p>Ano:</b> "+cx+"</p>" +
-        "<b><p>Filiados:</b> "+cy+"</p>"
+        "<b><p>"+nome+":</b> "+cy+"</p>"
     $("#topo").html(topo);
     $("#resto").html(resto);
 }
@@ -163,10 +200,12 @@ function acinzenta(event) {
     } else {
         var elemento = event
     }
+
     $(elemento).css(
         {"stroke":"gray",
             "opacity":0.3
         })
+
     $(".tooltip").css({opacity: 0});
 }
 

@@ -246,7 +246,7 @@ def termina_contagem_estoque():
     for ano in saida:
         estoque[ano] = {}
         for sigla in saida[ano]:
-            estoque[ano][sigla] = soma_anos_anteriores(saida,ano,sigla)
+            estoque[ano][sigla] = conserta_estoque(soma_anos_anteriores(saida,ano,sigla))
 
 
     #saida de um json
@@ -260,7 +260,7 @@ def termina_contagem_estoque():
                 "ano":ano,
                 "estoque":estoque[ano][sigla]
             }
-            
+
             if ano_anterior in estoque:
                 if sigla in estoque[ano_anterior]:
                     item["var_abs"] = item["estoque"]-estoque[ano_anterior][sigla]
@@ -279,6 +279,9 @@ def termina_contagem_estoque():
     df = df.fillna(0)
     df.to_csv("estoque_partidos_ano.csv")
     #df.to_csv("estoque_partidos_ano2011.csv")
+
+def conserta_estoque(dado):
+    return dado if dado > 1000 else 0
 
 def soma_anos_anteriores(dados,ano,sigla):
     anos = [int(k) for k in dados.keys()]
