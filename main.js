@@ -175,15 +175,15 @@ function adiciona_eventos() {
 
 function move(event) {
     //mexe a tooltip
-    if (parseInt(cx) < 2011) {
+    if (parseInt(cx) < 2010) {
         $(".tooltip").css({
-            left: event.pageX - margin_left/2,
-            top: event.pageY - margin_top/2
+            left: event.pageX - 15,
+            top: event.pageY - 20
         });
     } else {
         $(".tooltip").css({
-            left: event.pageX - margin_left*4.5,
-            top: event.pageY - margin_top/2
+            left: event.pageX - 155,
+            top: event.pageY - 20
         });
     }
 
@@ -245,15 +245,15 @@ function destaca(event) {
         opacity: 1,
         "border-color": acha_cor(partido)
     });
-    if (parseInt(cx) < 2011) {
+    if (parseInt(cx) < 2010) {
         $(".tooltip").css({
-            left: event.pageX - margin_left/2,
-            top: event.pageY - margin_top/2
+            left: event.pageX - 15,
+            top: event.pageY - 20
         });
     } else {
         $(".tooltip").css({
-            left: event.pageX - margin_left*4.5,
-            top: event.pageY - margin_top/2
+            left: event.pageX - 155,
+            top: event.pageY - 20
         });
     }
     var nome = "Estoque de filiados no ano"
