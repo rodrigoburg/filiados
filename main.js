@@ -4,10 +4,10 @@ var div = $(".tooltip"),
     data,
     variavel;
 
-width = $(window).width()
-height = 700
-margin_left = 70
-margin_top = 30
+width = $(window).width();
+height = $(window).height()*0.7;
+margin_left = width*0.02;
+margin_top = height*0.04;
 anos = ["2001","2002","2003","2004","2005","2006","2007","2008","2009","2010","2011","2012","2013","2014","2015"]
 cores = {
     "PT"       :["#a00200"],
@@ -65,13 +65,9 @@ function desenha_grafico() {
     var myChart = new dimple.chart(svg, data);
     myChart.setBounds(margin_left, margin_top, width-margin_left*4, height-margin_top*3);
     var y = myChart.addMeasureAxis("y", variavel);
-    if (variavel == "var_abs") {
-        y.title = "Variação absoluta no número de filiados em relação ao ano anterior"
-    } else {
-        y.title = "Estoque de filiados no ano"
-    }
     var x = myChart.addTimeAxis("x", "ano","%Y","%Y");
-    x.title = ""
+    x.title = "";
+    y.title = "";
     series = myChart.addSeries("partido", dimple.plot.line);
     series.lineMarker = true;
     series.lineWeight = 7;
@@ -93,6 +89,15 @@ function desenha_grafico() {
     myChart.draw(2000);
     adiciona_eventos();
     arruma_eixos();
+    arruma_botao();
+}
+
+function arruma_botao() {
+    $("#botao").css({
+        left: margin_left,
+        top: margin_top,
+        visibility:"visible"
+    })
 }
 
 function isInt(value) {
@@ -112,13 +117,13 @@ function arruma_eixos() {
             //se não tiver, for número e não for zero, é no eixo x. então vamos rodá-lo
             if (variavel == "var_abs") {
                 d3.select(d)
-                    .attr("transform", function(d) {
+                    .attr("transform", function() {
                         return "translate(-105,30) rotate(-90)"
                     });
 
             } else {
                 d3.select(d)
-                    .attr("transform", function(d) {
+                    .attr("transform", function() {
                         return "translate(-15,30) rotate(-90)"
                     });
             }
